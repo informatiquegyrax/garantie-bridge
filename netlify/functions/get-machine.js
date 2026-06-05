@@ -84,4 +84,11 @@ exports.handler = async function (event) {
     };
 
   }
+ const formRow = await formResp.json();
+
+return {
+  statusCode: 200,
+  headers,
+  body: JSON.stringify(formRow, null, 2)
+}; 
 };
