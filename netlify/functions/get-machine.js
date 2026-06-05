@@ -1,5 +1,6 @@
 exports.handler = async function (event) {
-  const TABLE_ID = process.env.BASEROW_TABLE_ID;
+  // TABLE_ID doit être l'ID de votre table "Numéro de série" (celle où se trouvent toutes les machines)
+  const TABLE_ID = process.env.BASEROW_TABLE_ID; 
   const API_KEY  = process.env.BASEROW_API_KEY;
 
   const headers = {
@@ -7,65 +8,62 @@ exports.handler = async function (event) {
     'Content-Type': 'application/json',
   };
 
-  // Diagnostic : si les variables manquent, on le dit clairement
   if (!TABLE_ID || !API_KEY) {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({
-        error: 'Variables environnement manquantes',
-        TABLE_ID_present: !!TABLE_ID,
-        API_KEY_present:  !!API_KEY,
-      }),
+      body: JSON.stringify({ error: 'Variables environnement manquantes' }),
     };
   }
 
-  const rowId = event.queryStringParameters && event.queryStringParameters.row_id;
+  // On récupère le numéro de série saisi passé dans l'URL (ex: ?num_serie_saisie=SN12345)
+  const numSerieSaisie = event.queryStringParameters && event.queryStringParameters.num_serie_saisie;
 
-  if (!rowId) {
+  if (!numSerieSaisie) {
     return {
       statusCode: 400,
       headers,
-      body: JSON.stringify({ error: 'Paramètre row_id manquant.' }),
+      body: JSON.stringify({ error: "Paramètre 'num_serie_saisie' manquant dans l'URL." }),
     };
   }
 
   try {
-    const resp = await fetch(
-      `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/${rowId}/?user_field_names=true`,
-      { headers: { Authorization: `Token ${API_KEY}` } }
-    );
-
-    if (resp.status === 404) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: `Aucune machine trouvée pour l'ID ${rowId}.` }),
-      };
-    }
+    // On appelle l'API Baserow en utilisant un filtre d'égalité exacte sur la colonne NUM_SERIE
+    // filter__field_NUM_SERIE__equal=... cherche la correspondance parfaite
+    const url = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true&filter__field_NUM_SERIE__equal=${encodeURIComponent(numSerieSaisie)}`;
+    
+    const resp = await fetch(url, { 
+      headers: { Authorization: `Token ${API_KEY}` } 
+    });
 
     if (!resp.ok) {
       throw new Error(`Erreur Baserow : ${resp.status}`);
     }
 
-    const row = await resp.json();
+    const data = await resp.json();
 
-    // LOG DE SÉCURITÉ : Permet de voir la structure exacte reçue dans votre console (Netlify / Cloudflare logs)
-    console.log("DONNÉES BRUTES DE BASEROW :", JSON.stringify(row));
+    // Baserow renvoie une liste de résultats dans un tableau "results"
+    if (!data.results || data.results.length === 0) {
+      return {
+        statusCode: 404,
+        headers,
+        body: JSON.stringify({ error: `Aucune machine trouvée pour le numéro de série : ${numSerieSaisie}` }),
+      };
+    }
 
-    // Sécurité pour le numéro de série (si c'est un champ Lien/Relation ou du texte brut)
-    const numSerieRaw = row['NUM_SERIE'];
-    const finalNumSerie = Array.isArray(numSerieRaw) && numSerieRaw.length > 0 
-      ? numSerieRaw[0].value 
-      : (numSerieRaw || '');
+    // On prend la première machine correspondante trouvée
+    const row = data.results[0];
+
+    // LOG DE SÉCURITÉ : Permet de voir la structure exacte de la machine trouvée dans vos logs Netlify
+    console.log("MACHINE TROUVÉE :", JSON.stringify(row));
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        num_serie:    finalNumSerie,
-        type_machine: row['LIB']      || '',
-        date_fab:     row['DATE_FAB'] || '',
+        num_serie:    row['NUM_SERIE'] || numSerieSaisie, // On renvoie le numéro de série valide
+        type_machine: row['LIB']       || '',
+        date_fab:     row['DATE_FAB']  || '',
       }),
     };
 
