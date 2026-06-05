@@ -1,77 +1,55 @@
-exports.handler = async function (event) {
-  // TABLE_ID doit être l'ID de votre table "Numéro de série" (celle où se trouvent toutes les machines)
-  const TABLE_ID = process.env.BASEROW_TABLE_ID; 
-  const API_KEY  = process.env.BASEROW_API_KEY;
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // 1. Récupération des paramètres présents dans l'URL de la page
+    const urlParams = new URLSearchParams(window.location.search);
+    const numSerieSaisie = urlParams.get('num_serie_saisie');
 
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
-  };
-
-  if (!TABLE_ID || !API_KEY) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'Variables environnement manquantes' }),
-    };
-  }
-
-  // On récupère le numéro de série saisi passé dans l'URL (ex: ?num_serie_saisie=SN12345)
-  const numSerieSaisie = event.queryStringParameters && event.queryStringParameters.num_serie_saisie;
-
-  if (!numSerieSaisie) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({ error: "Paramètre 'num_serie_saisie' manquant dans l'URL." }),
-    };
-  }
-
-  try {
-    // On appelle l'API Baserow en utilisant un filtre d'égalité exacte sur la colonne NUM_SERIE
-    // filter__field_NUM_SERIE__equal=... cherche la correspondance parfaite
-    const url = `https://api.baserow.io/api/database/rows/table/${TABLE_ID}/?user_field_names=true&filter__field_NUM_SERIE__equal=${encodeURIComponent(numSerieSaisie)}`;
-    
-    const resp = await fetch(url, { 
-      headers: { Authorization: `Token ${API_KEY}` } 
-    });
-
-    if (!resp.ok) {
-      throw new Error(`Erreur Baserow : ${resp.status}`);
+    // Sécurité : Si le paramètre n'est pas présent, on arrête le script proprement
+    if (!numSerieSaisie) {
+        console.log("En attente de la soumission du premier formulaire (num_serie_saisie manquant).");
+        return;
     }
 
-    const data = await resp.json();
+    // 2. Appel de votre fonction Netlify avec le numéro de série récupéré
+    // (Le chemin relatif fonctionne parfaitement puisque la fonction et le site partagent le même domaine Netlify)
+    const netlifyFunctionUrl = `/.netlify/functions/votre-nom-de-fichier-fonction?num_serie_saisie=${encodeURIComponent(numSerieSaisie)}`;
 
-    // Baserow renvoie une liste de résultats dans un tableau "results"
-    if (!data.results || data.results.length === 0) {
-      return {
-        statusCode: 404,
-        headers,
-        body: JSON.stringify({ error: `Aucune machine trouvée pour le numéro de série : ${numSerieSaisie}` }),
-      };
-    }
+    fetch(netlifyFunctionUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Erreur réseau lors de l'appel de la fonction (${response.status})`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Si la fonction retourne une erreur (ex: machine non trouvée dans Baserow)
+            if (data.error) {
+                console.error("Machine introuvable :", data.error);
+                alert(`Avis : ${data.error}`);
+                return;
+            }
 
-    // On prend la première machine correspondante trouvée
-    const row = data.results[0];
+            // 3. OPTION A : Si votre 2ème formulaire est intégré via un IFRAME Baserow
+            // On reconstruit l'URL de l'iframe en lui injectant les valeurs de pré-remplissage (?prefill_FIELD=VALUE)
+            const iframe = document.getElementById('votre-iframe-formulaire-2'); 
+            if (iframe) {
+                const baserowFormUrl = "https://baserow.io/form/VOTRE_ID_DE_FORMULAIRE";
+                
+                // On associe les données de la fonction Netlify aux champs attendus par le formulaire Baserow
+                iframe.src = `${baserowFormUrl}?prefill_NUM_SERIE=${encodeURIComponent(data.num_serie)}&prefill_TYPE_MACHINE=${encodeURIComponent(data.type_machine)}&prefill_DATE_FAB=${encodeURIComponent(data.date_fab)}`;
+                console.log("Iframe Baserow pré-rempli avec succès !");
+            }
 
-    // LOG DE SÉCURITÉ : Permet de voir la structure exacte de la machine trouvée dans vos logs Netlify
-    console.log("MACHINE TROUVÉE :", JSON.stringify(row));
-
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        num_serie:    row['NUM_SERIE'] || numSerieSaisie, // On renvoie le numéro de série valide
-        type_machine: row['LIB']       || '',
-        date_fab:     row['DATE_FAB']  || '',
-      }),
-    };
-
-  } catch (err) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: err.message }),
-    };
-  }
-};
+            /* // 4. OPTION B : Si vous utilisez des champs HTML classiques au lieu d'un iframe,
+            // décommentez les lignes ci-dessous et ajustez les IDs :
+            
+            document.getElementById('champ_num_serie').value = data.num_serie;
+            document.getElementById('champ_type_machine').value = data.type_machine;
+            document.getElementById('champ_date_fab').value = data.date_fab;
+            */
+        })
+        .catch(error => {
+            console.error("Erreur globale lors de la récupération des données :", error);
+        });
+});
+</script>
