@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // 2. Appel de votre fonction Netlify avec le numéro de série récupéré
     // (Le chemin relatif fonctionne parfaitement puisque la fonction et le site partagent le même domaine Netlify)
-    const netlifyFunctionUrl = `/.netlify/functions/votre-nom-de-fichier-fonction?num_serie_saisie=${encodeURIComponent(numSerieSaisie)}`;
+    const netlifyFunctionUrl = `/.netlify/functions/get-machine.js?num_serie_saisie=${encodeURIComponent(numSerieSaisie)}`;
 
     fetch(netlifyFunctionUrl)
         .then(response => {
