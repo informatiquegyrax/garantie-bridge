@@ -50,11 +50,20 @@ exports.handler = async function (event) {
 
     const row = await resp.json();
 
+    // LOG DE SÉCURITÉ : Permet de voir la structure exacte reçue dans votre console (Netlify / Cloudflare logs)
+    console.log("DONNÉES BRUTES DE BASEROW :", JSON.stringify(row));
+
+    // Sécurité pour le numéro de série (si c'est un champ Lien/Relation ou du texte brut)
+    const numSerieRaw = row['NUM_SERIE'];
+    const finalNumSerie = Array.isArray(numSerieRaw) && numSerieRaw.length > 0 
+      ? numSerieRaw[0].value 
+      : (numSerieRaw || '');
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        num_serie:    row['NUM_SERIE'] || '',
+        num_serie:    finalNumSerie,
         type_machine: row['LIB']      || '',
         date_fab:     row['DATE_FAB'] || '',
       }),
