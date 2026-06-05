@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chargement du formulaire de garantie…</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --surface: #161b24;
+      --border: #232b39;
+      --accent: #00e5a0;
+      --text: #e8edf5;
+      --muted: #5a6580;
+      --error: #ff4d6a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,229,160,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,160,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,229,160,0.06) 0%, transparent 70%);
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 52px;
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+      box-shadow: 0 0 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,229,160,0.05);
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,229,160,0.08);
+      border: 1px solid rgba(0,229,160,0.2);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+      margin-bottom: 28px;
+    }
+
+    .badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    .state { display: none; }
+    .state.active { display: block; }
+
+    .big-spinner {
+      width: 56px; height: 56px;
+      border: 3px solid rgba(0,229,160,0.12);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 28px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 300;
+      line-height: 1.6;
+    }
+
+    .check-icon {
+      width: 56px; height: 56px;
+      background: rgba(0,229,160,0.1);
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+      font-size: 22px;
+      color: var(--accent);
+    }
+
+    .fields-grid {
+      background: rgba(0,229,160,0.04);
+      border: 1px solid rgba(0,229,160,0.12);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 24px 0;
+      text-align: left;
+      display: grid;
+      gap: 10px;
+    }
+
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .field-key {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .field-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .redirect-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .redirect-label {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .redirect-bar {
+      flex: 1;
+      height: 3px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .redirect-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      width: 0%;
+      transition: width 2s linear;
+    }
+
+    .error-icon {
+      width: 56px; height: 56px;
+      background: rgba(255,77,106,0.1);
+      border: 2px solid var(--error);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 28px;
+      font-size: 22px;
+      color: var(--error);
+    }
+
+    .error-msg {
+      color: var(--error);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .btn-retry {
+      display: inline-block;
+      padding: 12px 28px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      font-family: 'Sora', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-retry:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="badge">Demande de garantie</div>
+
+  <!-- LOADING -->
+  <div class="state active" id="state-loading">
+    <div class="big-spinner"></div>
+    <h1>Chargement en cours…</h1>
+    <p class="subtitle">Récupération des informations machine,<br/>veuillez patienter.</p>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="state" id="state-success">
+    <div class="check-icon">✓</div>
+    <h1>Machine identifiée</h1>
+    <p class="subtitle">Le formulaire de garantie va s'ouvrir<br/>avec les champs préremplis.</p>
+    <div class="fields-grid">
+      <div class="field-row">
+        <span class="field-key">N° de série</span>
+        <span class="field-val" id="res-serial">—</span>
+      </div>
+      <div class="field-row">
+        <span class="field-key">Type machine</span>
+        <span class="field-val" id="res-type">—</span>
+      </div>
+      <div class="field-row">
+        <span class="field-key">Date de fabrication</span>
+        <span class="field-val" id="res-date">—</span>
+      </div>
+    </div>
+    <div class="redirect-row">
+      <span class="redirect-label">Redirection…</span>
+      <div class="redirect-bar"><div class="redirect-bar-fill" id="rbar"></div></div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="state" id="state-error">
+    <div class="error-icon">✕</div>
+    <h1>Erreur</h1>
+    <p class="error-msg" id="error-msg">Une erreur est survenue.</p>
+    <a class="btn-retry" href="javascript:history.back()">← Retour au formulaire</a>
+  </div>
+</div>
+
+<script>
+  const FORM2_URL    = 'https://baserow.io/form/3vI8qE6-mvKrZBgaT_ndJrO5JiiXqyS54sCC_rJFHqM';
+  const PARAM_SERIAL = 'prefill_Lien_NUM_SERIE';
+  const PARAM_TYPE   = 'prefill_Type Machine';
+  const PARAM_DATE   = 'prefill_DATE_FAB';
+
+  function setState(id) {
+    document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  async function run() {
+    const params = new URLSearchParams(window.location.search);
+    const rowId  = params.get('row_id');
+
+    if (!rowId) {
+      document.getElementById('error-msg').textContent =
+        'Paramètre row_id manquant. Vérifiez la configuration de la redirection du formulaire 1.';
+      setState('state-error');
+      return;
+    }
+
+    try {
+      // Appel au backend Netlify Function (la clé API reste côté serveur)
+      const resp = await fetch(`/.netlify/functions/get-machine?row_id=${encodeURIComponent(rowId)}`);
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        document.getElementById('error-msg').textContent = data.error || 'Erreur inconnue.';
+        setState('state-error');
+        return;
+      }
+
+      document.getElementById('res-serial').textContent = data.num_serie    || '—';
+      document.getElementById('res-type').textContent   = data.type_machine || '—';
+      document.getElementById('res-date').textContent   = data.date_fab     || '—';
+      setState('state-success');
+
+      setTimeout(() => { document.getElementById('rbar').style.width = '100%'; }, 50);
+
+      const qp = new URLSearchParams();
+      if (data.num_serie)    qp.set(PARAM_SERIAL, data.num_serie);
+      if (data.type_machine) qp.set(PARAM_TYPE,   data.type_machine);
+      if (data.date_fab)     qp.set(PARAM_DATE,   data.date_fab);
+
+      setTimeout(() => {
+        window.location.href = `${FORM2_URL}?${qp.toString()}`;
+      }, 2300);
+
+    } catch (err) {
+      document.getElementById('error-msg').textContent = err.message;
+      setState('state-error');
+    }
+  }
+
+  run();
+</script>
+</body>
+</html>
