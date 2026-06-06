@@ -55,11 +55,14 @@ export default async (req, res) => {
 
     const machine = machineData.results[0];
 
-    return res.status(200).json({
-      num_serie: numSerie,
-      type_machine: machine.LIB || '',
-      date_fab: machine.DATE_FAB || '',
-    });
+    // Extraire seulement la date (avant l'espace et l'heure)
+const dateFab = machine.DATE_FAB ? machine.DATE_FAB.split(' ')[0] : '';
+
+return res.status(200).json({
+  num_serie: numSerie,
+  type_machine: machine.LIB || '',
+  date_fab: dateFab,
+});
 
   } catch (err) {
     return res.status(500).json({ error: err.message });
