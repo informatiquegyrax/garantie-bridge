@@ -159,35 +159,6 @@
       color: var(--text);
     }
 
-    .redirect-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 4px;
-    }
-
-    .redirect-label {
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .redirect-bar {
-      flex: 1;
-      height: 3px;
-      background: var(--border);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .redirect-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 99px;
-      width: 0%;
-      transition: width 2s linear;
-    }
-
     .error-icon {
       width: 56px; height: 56px;
       background: rgba(255,77,106,0.1);
@@ -255,10 +226,7 @@
         <span class="field-val" id="res-date">—</span>
       </div>
     </div>
-    <div class="redirect-row">
-      <span class="redirect-label">Redirection…</span>
-      <div class="redirect-bar"><div class="redirect-bar-fill" id="rbar"></div></div>
-    </div>
+    <button id="btn-validate" onclick="validateAndRedirect()" style="width: 100%; padding: 15px; background: #00e5a0; color: #0a0f0d; font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; border: none; border-radius: 10px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 24px rgba(0,229,160,0.25); transition: opacity 0.2s, transform 0.15s;">Valider et continuer →</button>
   </div>
 
   <!-- ERROR -->
@@ -271,10 +239,10 @@
 </div>
 
 <script>
-  const FORM2_URL = 'https://baserow.io/form/NJt_8tYhEmYEo5FNMERJX5_Ovw0LB7NihJbCbrdb6-I';
+  const FORM2_URL    = 'https://baserow.io/form/NJt_8tYhEmYEo5FNMERJX5_Ovw0LB7NihJbCbrdb6-I';
   const PARAM_SERIAL = 'prefill_Numéro de Série';
   const PARAM_TYPE   = 'prefill_Type Machine';
-  const PARAM_DATE   = 'prefill_DATE_FAB';
+  const PARAM_DATE   = 'prefill_Date de Fabrication';
 
   function setState(id) {
     document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
@@ -293,7 +261,6 @@
     }
 
     try {
-      // Appel au backend Netlify Function (la clé API reste côté serveur)
       const resp = await fetch(`/api/get-machine?row_id=${encodeURIComponent(rowId)}`);
       const data = await resp.json();
 
@@ -308,16 +275,12 @@
       document.getElementById('res-date').textContent   = data.date_fab     || '—';
       setState('state-success');
 
-      setTimeout(() => { document.getElementById('rbar').style.width = '100%'; }, 50);
-
-      const qp = new URLSearchParams();
-      if (data.num_serie)    qp.set(PARAM_SERIAL, data.num_serie);
-      if (data.type_machine) qp.set(PARAM_TYPE,   data.type_machine);
-      if (data.date_fab)     qp.set(PARAM_DATE,   data.date_fab);
-
-      setTimeout(() => {
-        window.location.href = `${FORM2_URL}?${qp.toString()}`;
-      }, 2300);
+      // Stocker les données pour la redirection au clic du bouton
+      window.machineData = {
+        num_serie: data.num_serie,
+        type_machine: data.type_machine,
+        date_fab: data.date_fab,
+      };
 
     } catch (err) {
       document.getElementById('error-msg').textContent = err.message;
@@ -326,6 +289,22 @@
   }
 
   run();
+
+  // Fonction appelée au clic du bouton "Valider et continuer"
+  window.validateAndRedirect = function() {
+    const btn = document.getElementById('btn-validate');
+    btn.disabled = true;
+    btn.textContent = 'Redirection…';
+    
+    const qp = new URLSearchParams();
+    if (window.machineData.num_serie)    qp.set(PARAM_SERIAL, window.machineData.num_serie);
+    if (window.machineData.type_machine) qp.set(PARAM_TYPE,   window.machineData.type_machine);
+    if (window.machineData.date_fab)     qp.set(PARAM_DATE,   window.machineData.date_fab);
+
+    setTimeout(() => {
+      window.location.href = `${FORM2_URL}?${qp.toString()}`;
+    }, 500);
+  };
 </script>
 </body>
 </html>
