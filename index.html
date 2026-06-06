@@ -296,11 +296,14 @@ const PARAM_MACHINE = 'prefill_NUM_SERIE-MACHINE';
     const btn = document.getElementById('btn-validate');
     btn.disabled = true;
     btn.textContent = 'Redirection…';
-    
-    const qp = new URLSearchParams();
-    if (window.machineData.num_serie)    qp.set(PARAM_SERIAL, window.machineData.num_serie);
-    if (window.machineData.type_machine) qp.set(PARAM_TYPE,   window.machineData.type_machine);
-    if (window.machineData.date_fab)     qp.set(PARAM_DATE,   window.machineData.date_fab);
+
+    const concatenated = `${window.machineData.num_serie} - ${window.machineData.type_machine} (${window.machineData.date_fab})`;
+
+const qp = new URLSearchParams();
+if (window.machineData.num_serie)    qp.set(PARAM_SERIAL, window.machineData.num_serie);
+if (window.machineData.type_machine) qp.set(PARAM_TYPE,   window.machineData.type_machine);
+if (window.machineData.date_fab)     qp.set(PARAM_DATE,   window.machineData.date_fab);
+qp.set(PARAM_MACHINE, concatenated);
 
     setTimeout(() => {
       window.location.href = `${FORM2_URL}?${qp.toString()}`;
