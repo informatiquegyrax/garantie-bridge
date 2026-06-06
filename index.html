@@ -294,7 +294,7 @@
 
     try {
       // Appel au backend Netlify Function (la clé API reste côté serveur)
-      const resp = await fetch(`/.netlify/functions/get-machine?row_id=${encodeURIComponent(rowId)}`);
+      const resp = await fetch(`/api/get-machine?row_id=${encodeURIComponent(rowId)}`);
       const data = await resp.json();
 
       if (!resp.ok) {
